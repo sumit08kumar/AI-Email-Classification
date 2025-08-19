@@ -1,0 +1,537 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "text": "={{ $json.From }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "senderName",
+              "description": "Extract Sender Name from the Email. If no name then empty"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "You are an advanced extraction tool. Only pull out the relevant details from the text. If you're unsure about the value of any requested attribute, leave it as an empty string."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6f18a8bd-ee12-42df-9adf-424658bb01c4",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        304,
+        208
+      ],
+      "id": "876acb69-ac1d-4ade-b383-5662b36ee686",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zFq4n7FXnd3Alm1y",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "33122c26-c0ad-4048-b55f-aa65b4d3ad87",
+              "leftValue": "={{ $json.output.senderName }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "19471fe3-e2b4-439a-82c2-e93f1d3ab3bd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a32c7630-3355-495f-900e-5e58130e7282",
+              "name": "intro",
+              "value": "=Dear {{ $json.output.senderName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        -96
+      ],
+      "id": "00b1052d-db3d-46c2-ab10-77a4def8871f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "512bca5a-d9ce-417a-8c45-e4952fe0939a",
+              "name": "intro",
+              "value": "Hi, ",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        96
+      ],
+      "id": "499e5427-d31b-4e88-aa97-66a261d9b705",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "fieldsToMatchString": "={{ $json.intro }}",
+        "joinMode": "keepNonMatches",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        0
+      ],
+      "id": "c53f28a5-aabe-4e8f-baa0-57ec169ea98d",
+      "name": "Merge",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "19f96889-8f37-4995-9fc3-f002e51a31e4",
+              "name": "message_id",
+              "value": "={{ $('Gmail Trigger').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c011304c-5395-42e2-b7ad-fbbdfb91bc3d",
+              "name": "threadId",
+              "value": "={{ $('Gmail Trigger').item.json.threadId }}",
+              "type": "string"
+            },
+            {
+              "id": "dfb4c974-48b5-4ac1-88f9-bac0da28cc56",
+              "name": "snippet",
+              "value": "={{ $('Gmail Trigger').item.json.snippet }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "1d2897e2-912f-44eb-ba3b-cb2a388343b1",
+      "name": "Clean Data"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.snippet }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Service Requests",
+              "description": "Requesting assistance for [issue/service]. Please review the details and provide support at the earliest convenience."
+            },
+            {
+              "category": "Consultation Requests",
+              "description": "Requesting a consultation regarding [topic/project]. Kindly confirm availability and suggest a suitable time."
+            },
+            {
+              "category": "Payments",
+              "description": "Requesting confirmation and processing of payment for [invoice/service]. Kindly update on the payment status."
+            },
+            {
+              "category": "Others",
+              "description": "Email the don't come is other categories should be here."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Please classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Please always choice only one label. Don't explain, and only output the json. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "8eda7a71-3669-47ae-8779-de1726095634",
+      "name": "Text Classifier",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        240
+      ],
+      "id": "4ff7b5c2-f457-4220-bc8c-96cd8981bc0a",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zFq4n7FXnd3Alm1y",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.message_id }}",
+        "labelIds": [
+          "Label_3243196874267422524"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1776,
+        -256
+      ],
+      "id": "d4a464a7-d2be-409b-a845-4a5051c1dc0d",
+      "name": "Service Request",
+      "webhookId": "98353224-dd25-407a-9e99-f426e78168dc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Wq2nntHacsxS1OQI",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.message_id }}",
+        "labelIds": [
+          "Label_1816435084225678283"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1792,
+        -80
+      ],
+      "id": "c70942f3-6bce-4e0b-b599-ee90e150ba78",
+      "name": "Consultation Requests",
+      "webhookId": "15cea3bc-8f62-4642-9cc8-107ee36faeea",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Wq2nntHacsxS1OQI",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.message_id }}",
+        "labelIds": [
+          "Label_7690767831594721923"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1760,
+        96
+      ],
+      "id": "33a5cd42-42df-4e70-9326-fff5b6dcc9f9",
+      "name": "Payments",
+      "webhookId": "84252501-7ea4-4c99-bda0-f003f8b5baa2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Wq2nntHacsxS1OQI",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.message_id }}",
+        "labelIds": [
+          "Label_6561439374225279"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1760,
+        240
+      ],
+      "id": "e5723c58-2111-49d2-91c2-3f28d71002a1",
+      "name": "Others",
+      "webhookId": "60fd43af-2c0c-4065-a4e3-04fbdab289e9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Wq2nntHacsxS1OQI",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        -96
+      ],
+      "id": "b2cb6f13-45fa-4a4e-b774-e532f7e668a5",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Wq2nntHacsxS1OQI",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/classify-email",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        144
+      ],
+      "id": "fa7fea52-3812-461e-bed2-22bf14b62fef",
+      "name": "Webhook",
+      "webhookId": "d774b887-803b-4755-896a-94db12a75f6b"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Clean Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Data": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Service Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Consultation Requests",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Payments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Others",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1e84cf8d-7d60-4785-afc6-38dade309492",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "91c7154920f8dffd34ba0e66490eb310ec7ba1cab8ad093aad673ba88c02a290"
+  },
+  "id": "fToWcMVrOUo6DVBV",
+  "tags": []
+}
