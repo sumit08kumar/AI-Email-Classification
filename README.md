@@ -14,7 +14,7 @@ This web application replicates the functionality of your n8n workflow for email
 - **Personalized Greetings**: Generates "Dear [Name]" or "Hi," based on sender info
 - **Modern UI**: Responsive React interface with Tailwind CSS
 ## Workflow Of N8N
-
+ (workflow.png)
 
 ## Quick Start
 
